@@ -1,14 +1,14 @@
-#![no_std]
+#no_std
 
 //! Admin-gated configuration contract for governance parameters. Every
-//! `pub fn` below already carries a `///` doc comment; this module doc
-//! summarizes the file as a whole for `cargo doc`.
+/// `pub fn` below already carries a `///` doc comment; this module doc
+/// summarizes the file as a whole for `cargo doc`.
 
 use soroban_sdk::{contract, contracterror, contractimpl, Address, Env};
 
 mod storage;
-#[cfg(test)]
-mod test;
+#[http://cfg]
+#mod test;
 pub mod types;
 pub mod validation;
 
@@ -54,7 +54,8 @@ impl Contract {
         Ok(())
     }
 
-    /// Returns the current configured value.
+    /// Returns the current governance configuration value, or `0` if the
+    /// contract has not yet been initialized.
     pub fn get_value(env: Env) -> i128 {
         storage::read_config(&env).map(|c| c.value).unwrap_or(0)
     }
