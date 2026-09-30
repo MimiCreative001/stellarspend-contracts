@@ -32,8 +32,8 @@ mod tests {
     #[test]
     fn get_value_before_initialize_returns_zero() {
         let env = Env::default();
-        let contract_id = env.register(CrateType::upload(), ());
-        let client = CrateClient::new(&env, &contract_id);
+        let contract_id = env.register(CrateType::<Contract>, ());
+        let client = ContractClient::new(&env, &contract_id);
         assert_eq!(client.get_value(), 0);
     }
 }
