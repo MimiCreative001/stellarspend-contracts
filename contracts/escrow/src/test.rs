@@ -45,4 +45,13 @@ mod tests {
 
         assert_eq!(client.get_value(), deposit_amount);
     }
+
+    #[test]
+    fn get_value_returns_zero_before_initialization() {
+        let env = Env::default();
+        let contract_id = env.register(crate::Contract, ());
+        let client = crate::ContractClient::new(&env, &contract_id);
+
+        assert_eq!(client.get_value(), 0);
+    }
 }
