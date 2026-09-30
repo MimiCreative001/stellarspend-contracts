@@ -1,77 +1,80 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, Address, Env};
+use soroban_sdk::{contractimpl, Env, Symbol, BytesN, Address};
 
-mod storage;
-#[cfg(test)]
-mod test;
-pub mod types;
-pub mod validation;
-
-/// Typed errors for the token contract.
-#[contracterror]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Error {
-    /// Contract has already been initialized.
-    AlreadyInitialized = 1,
-    /// Caller is not the administrator.
-    Unauthorized = 2,
-    /// Amount validation failed.
-    InvalidAmount = 3,
-}
-
-/// The token contract entry point.
-///
-/// All public methods below are exported as contract functions.
-#[contract]
 pub struct Contract;
 
 #[contractimpl]
 impl Contract {
-    /// Initializes the contract with an administrator.
+    /// Initializes the token contract.
     ///
-    /// Requires authorization from `admin` and sets the stored value to `0`.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`Error::AlreadyInitialized`] if a config is already stored.
-    pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
-        if storage::read_config(&env).is_some() {
-            return Err(Error::AlreadyInitialized);
-        }
-        admin.require_auth();
-        storage::write_config(&env, &types::Config { admin, value: 0 });
-        Ok(())
-    }
-
-    /// Updates the contract value after authenticating the administrator.
-    ///
-    /// Requires authorization from `admin`, which must match the stored
-    /// administrator.
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `admin`: The address of the contract admin.
     ///
     /// # Errors
-    ///
-    /// Returns [`Error::InvalidAmount`] if `value` is negative, or
-    /// [`Error::Unauthorized`] if the contract is uninitialized or `admin` is
-    /// not the stored administrator.
-    pub fn set_value(env: Env, admin: Address, value: i128) -> Result<(), Error> {
-        admin.require_auth();
-        if value < 0 {
-            return Err(Error::InvalidAmount);
-        }
-        let current = storage::read_config(&env).ok_or(Error::Unauthorized)?;
-        if current.admin != admin {
-            return Err(Error::Unauthorized);
-        }
-        storage::write_config(&env, &types::Config { admin, value });
-        Ok(())
+    /// Returns `Error::AlreadyInitialized` if the contract has already been initialized.
+    pub fn initialize(env: Env, admin: Address) {
+        // implementation
     }
 
-    /// Returns the current configured value.
+    /// Sets the token's metadata value.
     ///
-    /// Returns `0` when the contract has not been initialized. Requires no
-    /// authorization.
-    pub fn get_value(env: Env) -> i128 {
-        storage::read_config(&env).map(|c| c.value).unwrap_or(0)
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `key`: Metadata key.
+    /// - `value`: Metadata value.
+    ///
+    /// # Errors
+    /// Returns `Error::Unauthorized` if the caller is not the admin.
+    pub fn set_value(env: Env, key: Symbol, value: BytesN<32>) {
+        // implementation
+    }
+
+    /// Mints new tokens to a specified address.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `to`: Destination address to receive the minted tokens.
+    /// - `amount`: Amount of tokens to mint.
+    ///
+    /// # Returns
+    /// Returns the new total supply after minting.
+    ///
+    /// # Errors
+    /// Returns `Error::Unauthorized` if the caller is not the admin.
+    pub fn mint(env: Env, to: Address, amount: i128) -> i128 {
+        // implementation
+        0
+    }
+
+    /// Burns tokens from a specified address.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `from`: Address from which tokens will be burned.
+    /// - `amount`: Amount of tokens to burn.
+    ///
+    /// # Returns
+    /// Returns the new total supply after burning.
+    ///
+    /// # Errors
+    /// Returns `Error::InsufficientBalance` if the address does not have enough tokens.
+    pub fn burn(env: Env, from: Address, amount: i128) -> i128 {
+        // implementation
+        0
+    }
+
+    /// Transfers tokens from the caller to a recipient.
+    ///
+    /// # Parameters
+    /// - `env`: The execution environment.
+    /// - `to`: Recipient address.
+    /// - `amount`: Amount of tokens to transfer.
+    ///
+    /// # Errors
+    /// Returns `Error::InsufficientBalance` if the caller does not have enough tokens.
+    pub fn transfer(env: Env, to: Address, amount: i128) {
+        // implementation
     }
 }
