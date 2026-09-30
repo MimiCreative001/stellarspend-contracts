@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[cfg(test)]
 mod tests {
     use soroban_sdk::testutils::Address as _;
     use soroban_sdk::{Address, Env};
