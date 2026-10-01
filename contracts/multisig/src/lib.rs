@@ -166,6 +166,95 @@ pub fn set_signers(env: &Env, caller: Address, signers: Vec<Address>, threshold:
         .set(&DataKey::Threshold, &threshold);
 }
 
+/// Validates that `signers` has no duplicates and `threshold` ≤ len(signers).
+pub fn validate_signer_config(env: &Env, signers: &Vec<Address>, threshold: u32) {
+    let len = signers.len();
+    if len == 0 || threshold > len {
+        panic_with_error!(env, Error::InvalidThreshold);
+    }
+    // Check for duplicates via nested comparison.
+    for i in 0..len {
+        for j in (i + 1)..len {
+            if signers.get(i).unwrap() == signers.get(j).unwrap() {
+                panic_with_error!(env, Error::DuplicateSigner);
+            }
+        }
+    }
+}
+
+/// Returns the configured signer list.
+pub fn get_signers(env: &Env) -> Vec<Address> {
+    env.storage()
+        .instance()
+        .get(&DataKey::Signers)
+        .unwrap_or_else(|| Vec::new(env))
+}
+
+/// Returns the current approval threshold.
+pub fn get_threshold(env: &Env) -> u32 {
+    env.storage()
+        .instance()
+        .get(&DataKey::Threshold)
+        .unwrap_or(0u32)
+}
+
+/// Updates the high-value transaction threshold. Admin-only.
+pub fn set_high_value_threshold(env: &Env, caller: Address, amount: i128) {
+    require_admin(env, &caller);
+    if amount < 0 {
+        panic_with_error!(env, Error::InvalidAmount);
+    }
+    env.storage()
+        .instance()
+        .set(&DataKey::HighValueThreshold, &amount);
+}
+
+/// Returns the high-value transaction threshold.
+pub fn get_high_value_threshold(env: &Env) -> i128 {
+    env.storage()
+        .instance()
+        .get(&DataKey::HighValueThreshold)
+        .unwrap_or(i128::MAX)
+}
+
+/// Returns `true` if `signer` is in the current signer set.
+pub fn is_signer(env: &Env, signer: &Address) -> bool {
+    let signers = get_signers(env);
+    signers.contains(signer)
+}
+
+/// Returns the current approval count for `tx_id`.
+pub fn get_approval_count(env: &Env, tx_id: u64) -> u32 {
+    env.storage()
+        .instance()
+        .get(&DataKey::ApprovalCount(tx_id))
+        .unwrap_or(0u32)
+}
+
+/// Records a signer's approval for `tx_id`.
+///
+/// Returns `Error::UnauthorizedSigner` if `signer` is not in the configured
+/// signer list, and `Error::DuplicateApproval` if `signer` has already
+/// approved this transaction.
+pub fn approve(env: &Env, signer: Address, tx_id: u64) -> Result<(), Error> {
+    signer.require_auth();
+    if !is_signer(env, &signer) {
+        return Err(Error::UnauthorizedSigner);
+    }
+    let approval_key = DataKey::Approval(tx_id, signer.clone());
+    if env.storage().instance().has(&approval_key) {
+        return Err(Error::DuplicateApproval);
+    }
+    env.storage().instance().set(&approval_key, &true);
+    let count = get_approval_count(env, tx_id) + 1;
+    env.storage()
+        .instance()
+        .set(&DataKey::ApprovalCount(tx_id), &count);
+    let threshold = get_threshold(env);
+    MultisigEvents::approval_recorded(env, tx_id, &signer, count, threshold);
+    Ok(())
+}
+
 /// Multisig contract entrypoint.
 #[contract]
 pub struct Contract;
@@ -224,5 +313,14 @@ impl Contract {
     /// Returns the current approval count for a pending transaction.
     pub fn get_approval_count(env: Env, tx_id: u64) -> u32 {
         get_approval_count(&env, tx_id)
+    }
+
+    /// Records the caller's approval for a pending transaction.
+    ///
+    /// Returns `Error::UnauthorizedSigner` if the caller is not in the
+    /// configured signer list, and `Error::DuplicateApproval` if the caller
+    /// has already approved this transaction.
+    pub fn approve(env: Env, signer: Address, tx_id: u64) -> Result<(), Error> {
+        approve(&env, signer, tx_id)
     }
 }

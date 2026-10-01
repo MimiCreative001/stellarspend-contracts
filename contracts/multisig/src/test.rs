@@ -180,4 +180,26 @@ mod tests {
 
         assert_eq!(client.get_approval_count(&tx_id), 1u32);
     }
+
+    // -----------------------------------------------------------------------
+    // approve
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn approve_rejects_unauthorized_signer() {
+        let env = make_env();
+        let (client, admin) = setup_contract(&env);
+
+        // Configure one legitimate signer.
+        let signer = Address::generate(&env);
+        let signers = vec![&env, signer.clone()];
+        client.set_signers(&admin, &signers, &1u32);
+
+        // An address that is NOT in the signer list.
+        let stranger = Address::generate(&env);
+        let tx_id = 42u64;
+
+        let result = client.try_approve(&stranger, &tx_id);
+        assert_eq!(result, Err(Ok(Error::UnauthorizedSigner)));
+    }
 }
