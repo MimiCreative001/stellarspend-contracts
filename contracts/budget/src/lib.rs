@@ -11,7 +11,6 @@ pub mod validation;
 pub use types::Budget;
 
 /// Typed errors for the budget contract.
-/// Typed errors for the budget contract.
 #[contracterror]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Error {
