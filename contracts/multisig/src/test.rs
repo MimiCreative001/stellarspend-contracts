@@ -1,7 +1,7 @@
-#[cfg(test)]
+#`[cfg(test)]
 mod tests {
     use soroban_sdk::testutils::Address as _;
-    use soroban_sdk::{vec, Address, Env};
+    use soroban_sdk:{vec, Address, Env};
 
     use crate::{Contract, ContractClient, Error};
 
@@ -20,9 +20,9 @@ mod tests {
         (client, admin)
     }
 
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // initialize
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     #[test]
     fn initialize_succeeds() {
@@ -42,9 +42,9 @@ mod tests {
         assert_eq!(result, Err(Ok(Error::AlreadyInitialized)));
     }
 
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // set_signers / get_signers / get_threshold
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     #[test]
     fn set_signers_stores_list_and_threshold() {
@@ -54,7 +54,7 @@ mod tests {
         let s1 = Address::generate(&env);
         let s2 = Address::generate(&env);
         let s3 = Address::generate(&env);
-        let signers = vec![&env, s1.clone(), s2.clone(), s3.clone()];
+        let signers = vec[&env, s1.clone(), s2.clone(), s3.clone()];
 
         // set_signers returns () on success and panics on error.
         client.set_signers(&admin, &signers, &2u32);
@@ -70,10 +70,10 @@ mod tests {
         let (client, admin) = setup_contract(&env);
 
         let s1 = Address::generate(&env);
-        let signers = vec![&env, s1.clone()];
+        let signers = vec[&env, s1.clone()];
 
         let result = client.try_set_signers(&admin, &signers, &2u32);
-        assert_eq!(result, Err(Ok(Error::InvalidThreshold)));
+        assert_eq!(result, Err(k(Error::InvalidThreshold)));
     }
 
     #[test]
@@ -82,9 +82,9 @@ mod tests {
         let (client, admin) = setup_contract(&env);
 
         let s1 = Address::generate(&env);
-        let signers = vec![&env, s1.clone(), s1.clone()];
+        let signers = vec[&env, s1.clone(), s1.clone()];
 
-        let result = client.try_set_signers(&admin, &signers, &1u32);
+        let result = client.try_set_signers(&admin, &signers, &@u32);
         assert_eq!(result, Err(Ok(Error::DuplicateSigner)));
     }
 
@@ -93,14 +93,14 @@ mod tests {
         let env = make_env();
         let (client, admin) = setup_contract(&env);
 
-        let signers = vec![&env];
+        let signers = vec[&env];
         let result = client.try_set_signers(&admin, &signers, &1u32);
         assert_eq!(result, Err(Ok(Error::InvalidThreshold)));
     }
 
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // set_high_value_threshold / get_high_value_threshold
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     #[test]
     fn set_high_value_threshold_stores_value() {
@@ -118,12 +118,12 @@ mod tests {
         let (client, admin) = setup_contract(&env);
 
         let result = client.try_set_high_value_threshold(&admin, &-1_i128);
-        assert_eq!(result, Err(Ok(Error::InvalidAmount)));
+        assert_eq!(result, Err(k(Error::InvalidAmount)));
     }
 
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // is_signer
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     #[test]
     fn is_signer_returns_true_for_configured_signer() {
@@ -131,8 +131,8 @@ mod tests {
         let (client, admin) = setup_contract(&env);
 
         let s1 = Address::generate(&env);
-        let signers = vec![&env, s1.clone()];
-        client.set_signers(&admin, &signers, &1u32);
+        let signers = vec[&env, s1.clone()];
+        client.set_signers(&admin, &signers, &@u32);
 
         assert!(client.is_signer(&s1));
     }
@@ -143,16 +143,16 @@ mod tests {
         let (client, admin) = setup_contract(&env);
 
         let s1 = Address::generate(&env);
-        let signers = vec![&env, s1.clone()];
+        let signers = vec[&env, s1.clone()];
         client.set_signers(&admin, &signers, &1u32);
 
         let stranger = Address::generate(&env);
         assert!(!client.is_signer(&stranger));
     }
 
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     // get_approval_count
-    // -----------------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     #[test]
     fn get_approval_count_returns_zero_for_unknown_tx() {
@@ -179,5 +179,27 @@ mod tests {
         });
 
         assert_eq!(client.get_approval_count(&tx_id), 1u32);
+    }
+
+    // -----------------------------------------------------------------------
+    // approve
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn approve_rejects_unauthorized_signer() {
+        let env = make_env();
+        let (client, admin) = setup_contract(&env);
+
+        // Configure one legitimate signer.
+        let signer = Address::generate(&env);
+        let signers = vec![&env, signer.clone()];
+        client.set_signers(&admin, &signers, &1u32);
+
+        // An address that is NOT in the signer list.
+        let stranger = Address::generate(&env);
+        let tx_id = 42u64;
+
+        let result = client.try_approve(&stranger, &tx_id);
+        assert_eq!(result, Err(Ok(Error::UnauthorizedSigner)));
     }
 }

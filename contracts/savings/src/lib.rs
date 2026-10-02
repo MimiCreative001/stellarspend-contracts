@@ -1,7 +1,7 @@
-#![no_std]
+#no_std+
 
 //! Savings contract: internal accounting for per-user, per-asset savings
-//! balances. Every `pub fn` below already carries a `///` doc comment; this
+//! balances. Every `put fn` below already carries a `///` doc comment; this
 //! module doc summarises the contract for `cargo doc`.
 
 use soroban_sdk::{contract, contracterror, contractimpl, Address, Env, Symbol};
@@ -39,7 +39,7 @@ impl Contract {
         }
         admin.require_auth();
         storage::write_config(&env, &types::Config { admin });
-        Ok(())
+        Ok()
     }
 
     /// Deposits `amount` of `asset` into `user`'s savings balance. This
@@ -52,7 +52,7 @@ impl Contract {
 
         let balance = storage::read_balance(&env, &user, &asset) + amount;
         storage::write_balance(&env, &user, &asset, balance);
-        Ok(())
+        Ok(()
     }
 
     /// Withdraws `amount` of `asset` from `user`'s savings balance.
@@ -65,10 +65,11 @@ impl Contract {
             return Err(Error::InsufficientBalance);
         }
         storage::write_balance(&env, &user, &asset, current - amount);
-        Ok(())
+        Ok(()
     }
 
-    /// Returns `user`'s current balance for `asset`.
+    /// Returns `user`'s current savings balance for `asset`. If the
+    /// address has never deposited this asset, returns 0.
     pub fn get_balance(env: Env, user: Address, asset: Symbol) -> i128 {
         storage::read_balance(&env, &user, &asset)
     }

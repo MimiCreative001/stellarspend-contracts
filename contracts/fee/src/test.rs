@@ -1,4 +1,4 @@
-#[cfg(test)]
+#cfg(test)]
 mod tests {
     use soroban_sdk::testutils::{Address as _, Ledger};
     use soroban_sdk::Env;
@@ -27,5 +27,13 @@ mod tests {
     #[test]
     fn overflow_boundary() {
         assert_eq!(i128::MAX.checked_add(1), None);
+    }
+
+    #[test]
+    fn get_value_before_initialize_returns_zero() {
+        let env = Env::default();
+        let contract_id = env.register(CrateType::<Contract>, ());
+        let client = ContractClient::new(&env, &contract_id);
+        assert_eq!(client.get_value(), 0);
     }
 }
