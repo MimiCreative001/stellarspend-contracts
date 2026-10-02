@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[cfg(test)]
 mod tests {
     use soroban_sdk::testutils::Address as _;
     use soroban_sdk::{Address, Env};
@@ -43,6 +44,19 @@ mod tests {
         let owner = Address::generate(&env);
         // [SEC-DEL-02] Self-delegation must be rejected.
         client.set_delegation(&owner, &owner, &100_i128);
+    }
+
+    #[test]
+    fn grant_rejects_self_delegation_with_invalid_address() {
+        // [SEC-DEL-02] Self-delegation (owner == delegate) must be rejected
+        // with Error::InvalidAddress.
+        let env = make_env();
+        let contract_id = env.register(DelegationContract, ());
+        let client = DelegationContractClient::new(&env, &contract_id);
+
+        let owner = Address::generate(&env);
+        let result = client.try_grant(&owner, &owner, &100_i128);
+        assert_eq!(result, Err(Ok(Error::InvalidAddress)));
     }
 
     #[test]
